@@ -1,0 +1,26 @@
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    </head>
+    <body class="min-h-screen">
+        <header class="">
+            <nav class="px-6 pt-6 flex items-center space-x-12">
+                <div class="text-2xl font-sans">
+                    "Try these"
+                </div>
+                <div class="flex-grow space-x-12">
+                    <a href="/" class="text-lg font-semibold hover:text-blue-400 "> Home </a>
+                    <a href="/faq" class="text-lg font-semibold hover:text-blue-400 "> Faq</a>
+                </div>
+                <div class="space-x-4" class="text-lg font-semibold hover:text-blue-400 ">
+                    <a href="/signin" class="text-lg font-semibold hover:text-blue-400 ">Sign in</a>
+                    <a href="/signup" class="text-lg font-semibold hover:text-blue-400 ">Sign up</a>
+                </div>
+            </nav>
+            <div class="border-t-2 border-gray-400 my-4 px-2 max-w-1"></div>
+        </header>
+        {{template "Page" .}}
+    </body>
+</html>
