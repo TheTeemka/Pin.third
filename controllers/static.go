@@ -7,3 +7,10 @@ func StaticHandler(tpl template) http.HandlerFunc {
 		tpl.Execute(w, r, nil)
 	}
 }
+
+func FaqHandler(tpl template) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := "the world "
+		tpl.Execute(w, r, data)
+	}
+}

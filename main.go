@@ -33,6 +33,9 @@ func main() {
 		UserService: &models.UserService{
 			DB: db,
 		},
+		SessionService: &models.SessionService{
+			DB: db,
+		},
 	}
 	err = models.Migrate(db, "migrations")
 	if err != nil {
@@ -46,8 +49,9 @@ func main() {
 	r.Get("/signin", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "signin.gohtml"))))
 
 	r.Post("/signup", userControllers.ProcessSignUp)
-	r.Post("/signin", userControllers.ProcessSignUp)
-
+	r.Post("/signin", userControllers.ProcessSignIn)
+	r.Get("/signout", userControllers.ProcessSignOut)
+	r.Get("/me", userControllers.CurrentUser)
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Page Not Found 404")
 	})
