@@ -1,0 +1,1 @@
+config: host=localhost port=5433 user=ol password=ol dbname=olar sslmode=disable

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"third/controllers"
+	"third/models"
 	"third/templates"
 	"third/views"
 
@@ -21,15 +22,36 @@ func tim(f http.Handler) http.Handler {
 	)
 }
 func main() {
-	fmt.Println("Shit, here we go again")
+	cfg := models.DefaultConfig()
+	db, err := models.Open(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	userControllers := controllers.Users{
+		UserService: &models.UserService{
+			DB: db,
+		},
+	}
+	err = models.Migrate(db, "migrations")
+	if err != nil {
+		panic(err)
+	}
+
 	r := chi.NewRouter()
 	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "home.gohtml"))))
 	r.Get("/faq", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "faq.gohtml"))))
 	r.Get("/signup", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "signup.gohtml"))))
 	r.Get("/signin", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "signin.gohtml"))))
 
-	r.Post("/signup", controllers.ProcessSignUp)
-	r.Post("/signin", controllers.ProcessSignIn)
+	r.Post("/signup", userControllers.ProcessSignUp)
+	r.Post("/signin", userControllers.ProcessSignUp)
+
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "Page Not Found 404")
+	})
+
 	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
 	csrfMw := csrf.Protect(
 		[]byte(csrfKey),
