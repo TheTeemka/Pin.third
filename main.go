@@ -28,21 +28,32 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
-
+	userService := models.UserService{
+		DB: db,
+	}
+	sessionService := models.SessionService{
+		DB: db,
+	}
 	userControllers := controllers.Users{
-		UserService: &models.UserService{
-			DB: db,
-		},
-		SessionService: &models.SessionService{
-			DB: db,
-		},
+		UserService:    &userService,
+		SessionService: &sessionService,
+	}
+	umw := controllers.UserMiddleWare{
+		SessionService: &sessionService,
 	}
 	err = models.Migrate(db, "migrations")
 	if err != nil {
 		panic(err)
 	}
 
+	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
+	csrfMw := csrf.Protect(
+		[]byte(csrfKey),
+		csrf.Secure(false),
+	)
+
 	r := chi.NewRouter()
+	r.Use(tim, csrfMw, umw.SetUser)
 	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "home.gohtml"))))
 	r.Get("/faq", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "faq.gohtml"))))
 	r.Get("/signup", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "signup.gohtml"))))
@@ -50,17 +61,17 @@ func main() {
 
 	r.Post("/signup", userControllers.ProcessSignUp)
 	r.Post("/signin", userControllers.ProcessSignIn)
+	r.Post("/signout", userControllers.ProcessSignOut)
 	r.Get("/signout", userControllers.ProcessSignOut)
-	r.Get("/me", userControllers.CurrentUser)
+
+	r.Route("/users/me", func(r chi.Router) {
+		r.Use(umw.RequireUser)
+		r.Get("/", userControllers.CurrentUser)
+	})
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Page Not Found 404")
 	})
 
-	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
-	csrfMw := csrf.Protect(
-		[]byte(csrfKey),
-		csrf.Secure(false),
-	)
-	fmt.Println("Server is starting :3000 ....")
-	http.ListenAndServe(":8000", csrfMw(tim(r)))
+	fmt.Println("Server is starting :8000 ....")
+	http.ListenAndServe(":8000", r)
 }

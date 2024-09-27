@@ -8,16 +8,25 @@
         <header class="">
             <nav class="px-6 pt-6 flex items-center space-x-12">
                 <div class="text-2xl font-sans">
-                    "Try these"
+                    "TODO: "
                 </div>
                 <div class="flex-grow space-x-12">
                     <a href="/" class="text-lg font-semibold hover:text-blue-400 "> Home </a>
                     <a href="/faq" class="text-lg font-semibold hover:text-blue-400 "> Faq</a>
                 </div>
+                {{if currentUser}}
+                <form action="/signout" method="post" class="inline pr-4">
+                    <div class="hidden">
+                        {{CSRFField}}
+                    </div>
+                    <button type="submit" class="text-lg font-semibold hover:text-blue-400">Sign out</button>
+                </form>
+                {{else}}
                 <div class="space-x-4" class="text-lg font-semibold hover:text-blue-400 ">
                     <a href="/signin" class="text-lg font-semibold hover:text-blue-400 ">Sign in</a>
                     <a href="/signup" class="text-lg font-semibold hover:text-blue-400 ">Sign up</a>
                 </div>
+                {{end}}
             </nav>
             <div class="border-t-2 border-gray-400 my-4 px-2 max-w-1"></div>
         </header>

@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"third/context"
 	"third/models"
 )
 
 type Users struct {
 	UserService    *models.UserService
+	SessionService *models.SessionService
+}
+
+type UserMiddleWare struct {
 	SessionService *models.SessionService
 }
 
@@ -68,19 +73,43 @@ func (u Users) ProcessSignOut(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/signin", http.StatusSeeOther)
 }
 func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	token, err := readCookie(r, CookieSession)
-	if err != nil {
-
-		fmt.Println(err)
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
-		return
-	}
-	user, err := u.SessionService.User(token)
-	if err != nil {
-
-		fmt.Println(err)
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
-		return
-	}
+	user := context.User(r.Context())
 	fmt.Fprint(w, user)
+}
+
+func (umw UserMiddleWare) SetUser(f http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			token, err := readCookie(r, CookieSession)
+			if err != nil {
+				f.ServeHTTP(w, r)
+				return
+			}
+
+			user, err := umw.SessionService.User(token)
+			if err != nil {
+				f.ServeHTTP(w, r)
+				return
+			}
+
+			ctx := r.Context()
+			ctx = context.WithUser(ctx, user)
+			r = r.WithContext(ctx)
+			f.ServeHTTP(w, r)
+		},
+	)
+}
+
+func (umw UserMiddleWare) RequireUser(f http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			user := context.User(ctx)
+			if user == nil {
+				http.Redirect(w, r, "/signin", http.StatusFound)
+				return
+			}
+			f.ServeHTTP(w, r)
+		},
+	)
 }
