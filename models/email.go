@@ -70,7 +70,7 @@ func (es *EmailService) Send(email Email) error {
 	return nil
 }
 
-func (es *EmailService) ForgetPassWord(to, resetUrl string) error {
+func (es *EmailService) ForgetPassword(to, resetUrl string) error {
 	email := Email{
 		To:        to,
 		Subject:   "Reset your password",
