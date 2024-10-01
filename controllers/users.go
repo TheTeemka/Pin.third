@@ -1,16 +1,20 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"third/context"
+	"third/merrors"
 	"third/models"
 )
 
 type Users struct {
 	Templates struct {
+		SignIn         template
+		SignUp         template
 		CheckYourEmail template
 		ResetPassword  template
 	}
@@ -20,6 +24,21 @@ type Users struct {
 	EmailService         *models.EmailService
 }
 
+func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		email string
+	}
+	data.email = r.FormValue("email")
+	u.Templates.SignIn.Execute(w, r, data)
+}
+
+func (u Users) SignUp(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		email string
+	}
+	data.email = r.FormValue("email")
+	u.Templates.SignUp.Execute(w, r, data)
+}
 func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
@@ -45,8 +64,10 @@ func (u Users) ProcessSignUp(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	user, err := u.UserService.Create(email, password)
 	if err != nil {
-		log.Printf("ProcessSignUp: %v", err)
-		fmt.Fprint(w, "Unable to parse form submissions")
+		if errors.Is(err, models.ErrEmailTaken) {
+			err = merrors.Public(err, "That email address is already associated with an account.")
+		}
+		u.Templates.SignUp.Execute(w, r, nil, err)
 		return
 	}
 

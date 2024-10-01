@@ -4,8 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"third/merrors"
 
+	"github.com/jackc/pgconn"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrEmailTaken = merrors.New("models: email address is already in use")
 )
 
 type User struct {
@@ -33,6 +39,10 @@ func (us *UserService) Create(email string, password string) (*User, error) {
 		VALUES($1, $2) RETURNING id;`, user.Email, user.PasswordHash)
 	err = row.Scan(&user.ID)
 	if err != nil {
+		var pgError *pgconn.PgError
+		if merrors.As(err, &pgError) {
+			return nil, ErrEmailTaken
+		}
 		return nil, fmt.Errorf("Create User: %v", err)
 	}
 

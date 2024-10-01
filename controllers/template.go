@@ -3,5 +3,5 @@ package controllers
 import "net/http"
 
 type template interface {
-	Execute(http.ResponseWriter, *http.Request, interface{})
+	Execute(w http.ResponseWriter, r *http.Request, data interface{}, errs ...error)
 }

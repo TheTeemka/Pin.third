@@ -1,6 +1,7 @@
 package views
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -26,6 +27,9 @@ func ParseFS(fs fs.FS, filePath ...string) (Template, error) {
 			"currentUser": func() (*models.User, error) {
 				return nil, fmt.Errorf("current user not implemented")
 			},
+			"errors": func() []string {
+				return nil
+			},
 		},
 	)
 	tpl, err := tpl.ParseFS(fs, filePath...)
@@ -37,7 +41,31 @@ func ParseFS(fs fs.FS, filePath ...string) (Template, error) {
 	}, nil
 }
 
-func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}) {
+func Must(tpl Template, err error) Template {
+	if err != nil {
+		panic(err)
+	}
+	return tpl
+}
+
+type public interface {
+	Public() string
+}
+
+func errorMessages(errs ...error) []string {
+	var msgs []string
+	for _, err := range errs {
+		var pubErr public
+		if errors.As(err, &pubErr) {
+			msgs = append(msgs, pubErr.Public())
+		} else {
+			msgs = append(msgs, "Something went wrong")
+		}
+	}
+	return msgs
+}
+
+func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}, errs ...error) {
 	tpl, err := t.htmltpl.Clone()
 	if err != nil {
 		panic(err)
@@ -50,6 +78,9 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 			"currentUser": func() (*models.User, error) {
 				return context.User(r.Context()), nil
 			},
+			"errors": func() []string {
+				return errorMessages(errs...)
+			},
 		},
 	)
 	err = tpl.Execute(w, data)
@@ -57,11 +88,4 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 		log.Printf("Execute: %v", err)
 		http.Error(w, "Executing Problem", http.StatusInternalServerError)
 	}
-}
-
-func Must(tpl Template, err error) Template {
-	if err != nil {
-		panic(err)
-	}
-	return tpl
 }

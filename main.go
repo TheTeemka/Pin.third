@@ -106,14 +106,17 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(tim, csrfMw, umw.SetUser)
-	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "home.gohtml"))))
 
+	r.Get("/style.css", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "style.css"))))
+	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "home.gohtml"))))
 	r.Get("/faq", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "faq.gohtml"))))
 
-	r.Get("/signup", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "signup.gohtml"))))
+	userControllers.Templates.SignUp = views.Must(views.ParseFS(templates.FS, "base.gohtml", "signup.gohtml"))
+	r.Get("/signup", userControllers.SignUp)
 	r.Post("/signup", userControllers.ProcessSignUp)
 
-	r.Get("/signin", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "signin.gohtml"))))
+	userControllers.Templates.SignIn = views.Must(views.ParseFS(templates.FS, "base.gohtml", "signin.gohtml"))
+	r.Get("/signin", userControllers.SignIn)
 	r.Post("/signin", userControllers.ProcessSignIn)
 
 	r.Post("/signout", userControllers.ProcessSignOut)
@@ -125,10 +128,12 @@ func main() {
 	userControllers.Templates.ResetPassword = views.Must(views.ParseFS(templates.FS, "base.gohtml", "reset-pw.gohtml"))
 	r.Get("/reset-pw", userControllers.ResetPassword)
 	r.Post("/reset-pw", userControllers.ProcessResetPassword)
+
 	r.Route("/users/me", func(r chi.Router) {
 		r.Use(umw.RequireUser)
 		r.Get("/", userControllers.CurrentUser)
 	})
+
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Page Not Found 404")
 	})
