@@ -83,6 +83,9 @@ func main() {
 	passwordResetService := &models.PasswordResetService{
 		DB: db,
 	}
+	galleryService := &models.GalleryService{
+		DB: db,
+	}
 	emailService := models.NewEmailService(cfg.SMTP)
 	userControllers := controllers.Users{
 		UserService:          userService,
@@ -93,6 +96,9 @@ func main() {
 	umw := controllers.UserMiddleWare{
 		SessionService: sessionService,
 	}
+	galleryControllers := controllers.Galleries{
+		GalleryService: galleryService,
+	}
 	err = models.Migrate(db, "migrations")
 	if err != nil {
 		panic(err)
@@ -102,12 +108,12 @@ func main() {
 	csrfMw := csrf.Protect(
 		[]byte(csrfKey),
 		csrf.Secure(cfg.CSRF.Secure),
+		csrf.Path("/"),
 	)
 
 	r := chi.NewRouter()
 	r.Use(tim, csrfMw, umw.SetUser)
 
-	r.Get("/style.css", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "style.css"))))
 	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "home.gohtml"))))
 	r.Get("/faq", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "base.gohtml", "faq.gohtml"))))
 
@@ -134,6 +140,22 @@ func main() {
 		r.Get("/", userControllers.CurrentUser)
 	})
 
+	galleryControllers.Templates.New = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/new.gohtml"))
+	galleryControllers.Templates.Edit = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/edit.gohtml"))
+	galleryControllers.Templates.Index = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/index.gohtml"))
+	galleryControllers.Templates.Show = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/show.gohtml"))
+	r.Route("/galleries", func(r chi.Router) {
+		r.Get("/{id}", galleryControllers.Show)
+		r.Group(func(r chi.Router) {
+			r.Use(umw.RequireUser)
+			r.Get("/new", galleryControllers.New)
+			r.Post("/new", galleryControllers.Create)
+			r.Get("/", galleryControllers.Index)
+			r.Get("/{id}/edit", galleryControllers.Edit)
+			r.Post("/{id}/edit", galleryControllers.ProcessEdit)
+			r.Post("/{id}/delete", galleryControllers.Delete)
+		})
+	})
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Page Not Found 404")
 	})

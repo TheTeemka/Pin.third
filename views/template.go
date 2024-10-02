@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path"
 	"third/context"
 	"third/models"
 
@@ -18,7 +19,7 @@ type Template struct {
 }
 
 func ParseFS(fs fs.FS, filePath ...string) (Template, error) {
-	tpl := template.New(filePath[0])
+	tpl := template.New(path.Base(filePath[0]))
 	tpl.Funcs(
 		template.FuncMap{
 			"CSRFField": func() template.HTML {
