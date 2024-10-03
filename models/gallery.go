@@ -88,6 +88,47 @@ func (service *GalleryService) ByUserID(userID int) ([]Gallery, error) {
 	return galleries, nil
 }
 
+type GalleryWithOwners struct {
+	ID    int
+	Title string
+	Owner string
+}
+
+func (service *GalleryService) AllGalleries() ([]GalleryWithOwners, error) {
+	rows, err := service.DB.Query(`
+		SELECT galleries.ID, galleries.Title, users.email 
+		FROM galleries
+		JOIN users ON galleries.user_id=users.id`)
+	if err != nil {
+		return nil, fmt.Errorf("all gallery: %w", err)
+	}
+
+	var galleries []GalleryWithOwners
+
+	for rows.Next() {
+		var gallery GalleryWithOwners
+		err = rows.Scan(&gallery.ID, &gallery.Title, &gallery.Owner)
+		if err != nil {
+			return nil, fmt.Errorf("all gallery: %w", err)
+		}
+		galleries = append(galleries, gallery)
+	}
+	return galleries, nil
+}
+
+func (service *GalleryService) Owner(galleryID int) (string, error) {
+	row := service.DB.QueryRow(`
+		SELECT users.email FROM galleries
+		JOIN users ON galleries.user_id=users.id
+		WHERE galleries.id = $1`, galleryID)
+
+	var email string
+	err := row.Scan(&email)
+	if err != nil {
+		return "", fmt.Errorf("Owner gallery: %w", err)
+	}
+	return email, nil
+}
 func (service *GalleryService) Update(gallery *Gallery) error {
 	_, err := service.DB.Exec(
 		`UPDATE galleries

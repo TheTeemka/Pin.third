@@ -152,9 +152,11 @@ func main() {
 	galleryControllers.Templates.Edit = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/edit.gohtml"))
 	galleryControllers.Templates.Index = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/index.gohtml"))
 	galleryControllers.Templates.Show = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/show.gohtml"))
+	galleryControllers.Templates.PublicGallery = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/public-gallery.gohtml"))
 	r.Route("/galleries", func(r chi.Router) {
 		r.Get("/{id}", galleryControllers.Show)
 		r.Get("/{id}/images/{filename}", galleryControllers.Image)
+		r.Get("/common", galleryControllers.PublicGallery)
 		r.Group(func(r chi.Router) {
 			r.Use(umw.RequireUser)
 			r.Get("/new", galleryControllers.New)

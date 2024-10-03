@@ -1,0 +1,27 @@
+{{define "Page"}}
+<div class="p-8 w-full">
+    <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800">
+        Public Galleries
+    </h1>
+    <table class="w-full table-fixed">
+        <thead>
+            <tr>
+                <th class="p-2 text-left w-24">ID</th>
+                <th class="p-2 text-left">Title</th>
+                <th class="p-2 text-left w-96">Owner</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Galleries}}
+                <tr class="border">
+                    <td class="p-2 border">{{.ID}}</td>
+                    <td class="p-2 border underline hover:text-blue-400">
+                        <a href="{{.Path}}">{{.Title}}</a>
+                    </td>
+                    <td class="p-2 border">{{.Owner}}</td>
+                </tr>
+            {{end }}
+        </tbody>
+    </table>
+</div>
+{{end}}

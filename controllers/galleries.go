@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"third/context"
 	"third/merrors"
@@ -15,10 +16,11 @@ import (
 
 type Galleries struct {
 	Templates struct {
-		Show  template
-		New   template
-		Edit  template
-		Index template
+		Show          template
+		New           template
+		Edit          template
+		Index         template
+		PublicGallery template
 	}
 	GalleryService *models.GalleryService
 }
@@ -29,9 +31,11 @@ func (g Galleries) Index(w http.ResponseWriter, r *http.Request) {
 		Title string
 	}
 	var data struct {
+		Owner      string
 		RGalleries []RGallery
 	}
 	user := context.User(r.Context())
+	data.Owner = user.Email
 	galleries, err := g.GalleryService.ByUserID(user.ID)
 	if err != nil {
 		log.Println(err)
@@ -49,6 +53,33 @@ func (g Galleries) Index(w http.ResponseWriter, r *http.Request) {
 	g.Templates.Index.Execute(w, r, data)
 }
 
+func (g Galleries) PublicGallery(w http.ResponseWriter, r *http.Request) {
+	galleries, err := g.GalleryService.AllGalleries()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	type Gallery struct {
+		ID    int
+		Title string
+		Owner string
+		Path  string
+	}
+	var data struct {
+		Galleries []Gallery
+	}
+	for _, gallery := range galleries {
+		data.Galleries = append(data.Galleries, Gallery{
+			ID:    gallery.ID,
+			Title: gallery.Title,
+			Owner: gallery.Owner,
+			Path:  filepath.Join("/galleries", strconv.Itoa(gallery.ID)),
+		})
+	}
+	g.Templates.PublicGallery.Execute(w, r, data)
+
+}
 func (g Galleries) New(w http.ResponseWriter, r *http.Request) {
 	var data struct {
 		Title string
@@ -138,10 +169,17 @@ func (g Galleries) Show(w http.ResponseWriter, r *http.Request) {
 	var data struct {
 		ID     int
 		Title  string
+		Owner  string
 		Images []Image
 	}
 	data.ID = gallery.ID
 	data.Title = gallery.Title
+	data.Owner, err = g.GalleryService.Owner(gallery.ID)
+	if err != nil {
+		log.Panicln(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
 
 	images, err := g.GalleryService.Images(gallery.ID)
 	if err != nil {

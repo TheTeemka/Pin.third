@@ -1,8 +1,13 @@
 {{define "Page"}}
 <div class="p-8 w-full">
-    <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800 flex justify-center">
-        {{.Title}}
-    </h1>
+    <div class="pt-4 pb-8">
+        <h1 class="text-3xl font-bold text-gray-800 flex justify-center">
+            {{.Title}}
+        </h1>
+        <h2 class="text-xl font-semibold text-gray-600 flex justify-center">
+            {{.Owner}}
+        </h2>
+    </div>
     <div class="columns-4 gap-4 space-y-4">
         {{range .Images}}
         <div class="h-min w-full">
