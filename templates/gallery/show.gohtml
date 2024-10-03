@@ -3,11 +3,11 @@
     <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800 flex justify-center">
         {{.Title}}
     </h1>
-    <div class="columns-4  gap-4 space-y-4">
+    <div class="columns-4 gap-4 space-y-4">
         {{range .Images}}
         <div class="h-min w-full">
-            <a href="{{.}}">
-                <img class="w-full rounded-lg" src="{{.}}">
+            <a href="/galleries/{{.GalleryID}}/images/{{.FilenameEscaped}}">
+                <img class="w-full rounded-lg  border-gray-500 border-2" src="/galleries/{{.GalleryID}}/images/{{.FilenameEscaped}}">
             </a>
         </div>
         {{end}}

@@ -17,6 +17,7 @@ type Users struct {
 		SignUp         template
 		CheckYourEmail template
 		ResetPassword  template
+		CurrentUser    template
 	}
 	UserService          *models.UserService
 	SessionService       *models.SessionService
@@ -56,7 +57,7 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	setCookie(w, CookieSession, session.Token)
-	fmt.Fprint(w, user)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
 }
 
 func (u Users) ProcessSignUp(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +79,7 @@ func (u Users) ProcessSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	setCookie(w, CookieSession, session.Token)
-	fmt.Fprint(w, user)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
 }
 
 func (u Users) ProcessSignOut(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +99,11 @@ func (u Users) ProcessSignOut(w http.ResponseWriter, r *http.Request) {
 }
 func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
-	fmt.Fprint(w, user)
+	var data struct {
+		Email string
+	}
+	data.Email = user.Email
+	u.Templates.CurrentUser.Execute(w, r, data)
 }
 
 func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {

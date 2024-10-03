@@ -59,7 +59,7 @@ func loadEnvConfig() (config, error) {
 func tim(f http.Handler) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("%-20s%-5s", r.URL.Path, r.Method)
+			log.Printf("%-20s %-5s", r.URL.Path, r.Method)
 			f.ServeHTTP(w, r)
 		},
 	)
@@ -135,6 +135,7 @@ func main() {
 	r.Get("/reset-pw", userControllers.ResetPassword)
 	r.Post("/reset-pw", userControllers.ProcessResetPassword)
 
+	userControllers.Templates.CurrentUser = views.Must(views.ParseFS(templates.FS, "base.gohtml", "current-user.gohtml"))
 	r.Route("/users/me", func(r chi.Router) {
 		r.Use(umw.RequireUser)
 		r.Get("/", userControllers.CurrentUser)
@@ -146,6 +147,7 @@ func main() {
 	galleryControllers.Templates.Show = views.Must(views.ParseFS(templates.FS, "base.gohtml", "gallery/show.gohtml"))
 	r.Route("/galleries", func(r chi.Router) {
 		r.Get("/{id}", galleryControllers.Show)
+		r.Get("/{id}/images/{filename}", galleryControllers.Image)
 		r.Group(func(r chi.Router) {
 			r.Use(umw.RequireUser)
 			r.Get("/new", galleryControllers.New)
@@ -154,6 +156,9 @@ func main() {
 			r.Get("/{id}/edit", galleryControllers.Edit)
 			r.Post("/{id}/edit", galleryControllers.ProcessEdit)
 			r.Post("/{id}/delete", galleryControllers.Delete)
+			r.Post("/{id}/images/{filename}/delete", galleryControllers.DeleteImage)
+			r.Post("/{id}/images/upload", galleryControllers.UploadImage)
+
 		})
 	})
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
