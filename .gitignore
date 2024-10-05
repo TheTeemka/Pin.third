@@ -1,0 +1,9 @@
+
+pregooser.sh
+node_modules
+/images
+
+/tmp
+.air.toml
+
+.env

@@ -24,7 +24,7 @@ func (us *UserService) Create(email string, password string) (*User, error) {
 	hashedBytes, err := bcrypt.GenerateFromPassword(
 		[]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, fmt.Errorf("Create User: %v", err)
+		return nil, fmt.Errorf("create user: %v", err)
 	}
 
 	var user User

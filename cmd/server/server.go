@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"third/controllers"
+	"third/migrations"
 	"third/models"
 	"third/templates"
 	"third/views"
@@ -76,11 +77,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	db, err := models.Open(cfg.PSQL)
+	err = run(cfg)
 	if err != nil {
 		panic(err)
 	}
+}
+func run(cfg config) error {
+	db, err := models.Open(cfg.PSQL)
+	if err != nil {
+		return err
+	}
 	defer db.Close()
+
+	err = models.MigrateFS(db, migrations.FS, ".")
+	if err != nil {
+		return err
+	}
+
 	userService := &models.UserService{
 		DB: db,
 	}
@@ -105,10 +118,6 @@ func main() {
 	}
 	galleryControllers := controllers.Galleries{
 		GalleryService: galleryService,
-	}
-	err = models.Migrate(db, "migrations")
-	if err != nil {
-		panic(err)
 	}
 
 	csrfKey := cfg.CSRF.Key
@@ -170,10 +179,12 @@ func main() {
 
 		})
 	})
+	r.Get("/assets/*", http.StripPrefix("/assets", http.FileServer(http.Dir("assets"))).ServeHTTP)
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Page Not Found 404")
 	})
 
 	fmt.Printf("Server is starting %s ....\n", cfg.Server.Address)
-	http.ListenAndServe(cfg.Server.Address, r)
+	err = http.ListenAndServe(cfg.Server.Address, r)
+	return err
 }
